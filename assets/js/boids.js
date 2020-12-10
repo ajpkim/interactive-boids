@@ -20,7 +20,7 @@ function randomNumber(min, max) {
 }
 
 function getDistance(boid, other) {
-    let dist = ((boid.x - other.x) ** 2) + ((boid.y - other.y) ** 2)
+    const dist = ((boid.x - other.x) ** 2) + ((boid.y - other.y) ** 2)
     return Math.sqrt(dist)
 }
 
