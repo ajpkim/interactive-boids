@@ -4,18 +4,22 @@ const ctx = canvas.getContext('2d');
 const MAX_X = canvas.width;
 const MAX_Y = canvas.height;
 
-let maxPerceptionRange = 75;
-let speedLimit = 3;
-let boidIdCount = 0;
-
+//////////////////////////////////////////////////
 // Slider variables:
-let alignMagnitude = 0;
-let separateMagnitude = 100;
-let cohereMagnitude = 0;
+let alignMagnitude = 10;
+let separateMagnitude = 10;
+let cohereMagnitude = 10;
 
-let alignRange = 75;
-let separateRange = 25;
-let cohereRange = 75;
+let alignRange = 100;
+let separateRange = 0;
+let cohereRange = 0;
+//////////////////////////////////////////////////
+
+let maxPerceptionRange = Math.max(alignRange, separateRange, cohereRange);
+let speedLimit = 5;
+let numBoids = 50;
+let boidIdCount = 0;
+// let maxForce = 50;
 
 //////////////////////////////////////////////////
 function initSimulation () {
@@ -49,9 +53,16 @@ class Vector2d {
     constructor(x, y) {
 	this.x = x;
 	this.y = y;
+    };
+    
+    copy() {
+	return new Vector2d(this.x, this.y);
     }
-    copy() { return new Vector2d(this.x, this.y) };
-    magnitude() { return Math.sqrt(this.x**2 + this.y**2) };
+    
+    magnitude() {
+	return Math.sqrt(this.x**2 + this.y**2)
+    }
+    
     setMagnitude(mag) {
 	if (this.magnitude() === 0) {
 	    return this;
@@ -61,6 +72,7 @@ class Vector2d {
 	    return this;
 	}
     }
+    
     limitMagnitude() {
 	if (this.magnitude() > speedLimit) {
 	    this.setMagnitude(speedLimit)
@@ -68,7 +80,9 @@ class Vector2d {
 	return this;
     }
     
-    normalize() { return this.setMagnitude(1) };
+    normalize() {
+	return this.div(this.magnitude());
+    }
 
     euclideanDistance(other) {
 	return Math.sqrt((this.x - other.x)**2 + (this.y - other.y)**2);
@@ -88,6 +102,7 @@ class Vector2d {
 	    throw new TypeError(`Invalid addition. ${other} is neither vector nor scalar`);
 	}
     }
+    
     subtract(other) {
 	if (other instanceof Vector2d) {
 	    this.x -= other.x;
@@ -96,11 +111,12 @@ class Vector2d {
 	} else if (typeof other === "number") {
 	    this.x -= other;
 	    this.y -= other;
-	    return true;
+	    return this;
 	} else {
 	    throw new TypeError(`Invalid subtraction. ${other} is neither vector nor scalar`);
 	}
     }
+    
     // Scalar multipication.
     mult(other) {
 	if (typeof other === "number") {
@@ -111,6 +127,7 @@ class Vector2d {
 	    throw new TypeError(`Invalid scalar multiplication. ${other} is not a scalar`);
 	}
     }
+    
     // Scalar division.
     div(other) {
 	if (typeof other === "number") {
@@ -121,7 +138,26 @@ class Vector2d {
 	    throw new TypeError(`Invalid scalar division. ${other} is not a scalar`);
 	}
     }
+
     
+    dot(other) {
+	if (other instanceof Vector2d) {
+	    return (this.x * other.x) + (this.y * other.y);
+	} else {
+	    throw new TypeError(`Invalid dot product. ${other} is not a Vector2d instance`);
+	}
+    }
+
+    // Calculate and return the angle between this vector and arg vector.
+    angleBetween(other) {
+	if (other instanceof Vector2d) {
+	    cosineTheta = this.dot(other) / (this.magnitude() + other.magnitude());
+	    return Math.acos(cosineTheta);
+	} else {
+	    throw new TypeError(`Cannot compute angle between ${this} and arg: ${other}`);
+	}
+    }
+	
     toString() {
 	return `<Vector2d obj with position (${this.x, this.y})>`;
     }
@@ -132,7 +168,8 @@ class Boid {
 	this.id = boidIdCount++;
 	this.size = 5
 	this.position = new Vector2d(randomNumber(0, MAX_X), randomNumber(0, MAX_Y));
-	this.velocity = new Vector2d(randomNumber(-speedLimit, speedLimit), randomNumber(-speedLimit, speedLimit)).limitMagnitude(speedLimit);
+	this.velocity = new Vector2d(randomNumber(-speedLimit, speedLimit), randomNumber(-speedLimit, speedLimit))//.limitMagnitude(speedLimit);
+	this.velocity.setMagnitude(randomNumber(0, speedLimit));
 	this.acceleration = new Vector2d(0, 0);
 	this.flockmates = new Set()
     }
@@ -154,18 +191,19 @@ class Boid {
 
     // Calculate and apply the alignment, cohesion, and separation forcee to boid acceleration:
     
-    // Flock centering.
+    // Velocity matching. Steer towards the average velocity (orientation) of local flockmates.
     align(alignMates) {
 	if (alignMates.length === 0) return;
 	let alignForce = new Vector2d(0, 0);
 	for (let other of alignMates) {
 	    alignForce.add(other.velocity);
-	};
+	}
 	alignForce.div(alignMates.length);
+	alignForce.subtract(this.velocity);
 	alignForce.setMagnitude(alignMagnitude);
 	this.acceleration.add(alignForce);
     }
-    // Collision avoidance.
+    // Collision avoidance. Steer to avoid crowding local flockmates.
     separate(separateMates) {
 	if (separateMates.length === 0) return;
 	let separateForce = new Vector2d(0, 0);
@@ -173,15 +211,16 @@ class Boid {
 	    let distance = boidDistances[this.id][other.id];
 	    let diffVector = this.position.copy().subtract(other.position);
 	    
-	    // Weight further away boids less for separation purposes.
-	    diffVector.div(distance);
-	    separateForce.add(diffVector.mult(-1));
+	    // Weight further away boids less.
+	    diffVector.div(distance**2);
+	    separateForce.add(diffVector);
 	}
 	separateForce.div(separateMates.length);
+	separateForce.subtract(this.velocity);
 	separateForce.setMagnitude(separateMagnitude);
 	this.acceleration.add(separateForce);
     }
-    // Flock centering.
+    // Flock centering. Steer towards the average position of local flockmates.
     cohere(cohereMates) {
 	if (cohereMates.length === 0) return;
 	let cohereForce = new Vector2d(0, 0);
@@ -189,6 +228,10 @@ class Boid {
 	    cohereForce.add(other.position);
 	};
 	cohereForce.div(cohereMates.length);
+	
+	// Get vector pointing towards average location by subtracting current location.
+	cohereForce.subtract(this.position);
+	cohereForce.subtract(this.velocity);
 	cohereForce.setMagnitude(cohereMagnitude);
 	this.acceleration.add(cohereForce);
     }
@@ -201,12 +244,12 @@ class Boid {
     }
 
     updatePosition() {
-	this.calcSteeringForces();
+	this.calcSteeringForces(); 
 	this.velocity.add(this.acceleration)
 	this.velocity.limitMagnitude(speedLimit);
 	this.position.add(this.velocity);
-	this.acceleration.mult(0);
 	wrapEdges(this);
+	this.acceleration.mult(0);
     }
 }
 
@@ -254,13 +297,13 @@ function runSim() {
 initSimulation();
 
 const flock = []
-for (let i=0; i < 20; i++) {
+for (let i=0; i < numBoids; i++) {
     flock.push(new Boid());
 }
 
-// flock.forEach(boid => drawBoid(boid));
+flock.forEach(boid => drawBoid(boid));
 
 let boidDistances = Array.from(Array(flock.length), () => new Array(flock.length))  // creates 2d array to hold boid distances i.e. [0][2] holds dist from boid 0 to boid 2
 
 calcDistancesFlockmates();
-runSim(flock);
+// runSim(flock);
