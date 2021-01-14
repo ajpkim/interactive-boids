@@ -14,7 +14,7 @@ h2 {
 }
 
 p {
-    color: blue;
+    color: white;
 }
 
 #canvas {
@@ -25,3 +25,23 @@ p {
     background-color: #fff;
 }
 
+/* Adding sliders */
+
+/* .rangeSliderContainer { /*
+/*     width: 75%; */
+/*     margin-top: 25px; */
+/*     background: orange; */
+/*     color: white; */
+		
+/* } */
+
+/* .forceSliderContainer { */
+/*     width: 75%; */
+/*     margin-top: 25px; */
+/*     color: white; */
+/*     background: purple; */
+/* } */
+
+.sliderContainer {
+    background: #009999
+}
