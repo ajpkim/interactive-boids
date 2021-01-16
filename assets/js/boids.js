@@ -25,11 +25,17 @@ let separateMagnitude;
 let cohereMagnitude;
 //////////////////////////////////////////////////
 // Simulation variables
+
 const rangeMultiplier = 10;
 const forceMultiplier = 0.04;
-let minSpeed = 3;
-let maxSpeed = 4;
-let boidSize = 3;
+let minSpeed = 2;
+let maxSpeed = 3;
+let edgeBuffer = 20;
+let boidRadius = 10;
+let boidTailLength = 5;
+let boidSideLength = 9;
+let boidSideRadians = 2.5;
+
 let numBoids = 125;
 let boidIdCount = 0;
 //////////////////////////////////////////////////
@@ -46,14 +52,14 @@ function randomNumber(min, max) {
 
 // Make boid position wrap around canvas instead of fly continually off-screen.
 function wrapEdges(boid) {
-    if (boid.position.x + boidSize < 0) {
+    if (boid.position.x + edgeBuffer < 0) {
 	boid.position.x = MAX_X;
-    } else if (boid.position.x - boidSize > MAX_X) {
+    } else if (boid.position.x - edgeBuffer > MAX_X) {
 	boid.position.x = 0;
     }
-    if (boid.position.y + boidSize < 0) {
+    if (boid.position.y + edgeBuffer < 0) {
 	boid.position.y = MAX_Y
-    } else if (boid.position.y - boidSize > MAX_Y) {
+    } else if (boid.position.y - edgeBuffer > MAX_Y) {
 	boid.position.y = 0;
     }
 }
@@ -288,12 +294,43 @@ function calcDistancesFlockmates() {
 }    
 //////////////////////////////////////////////////
 // Animation
+
+// There are 4 points. Order matters because of drawing sequence.
+function getBoidDrawingCoords(boid) {
+    points = [];
+    let directionVector = boid.velocity.copy().normalize();    
+    let directionRadians = Math.atan2(directionVector.y, directionVector.x);
+
+    let side1Radians = directionRadians + boidSideRadians;
+    let side1 = new Vector2d(Math.cos(side1Radians), Math.sin(side1Radians));
+    side1.setMagnitude(boidSideLength);
+    side1 = boid.position.copy().add(side1);
+    points.push([side1.x, side1.y]);
+
+    let tailVector = directionVector.mult(-1).setMagnitude(boidTailLength);
+    let tailPoint = boid.position.copy().add(tailVector);
+    points.push([tailPoint.x, tailPoint.y]);
+
+    let side2Radians = directionRadians - boidSideRadians;
+    let side2 = new Vector2d(Math.cos(side2Radians), Math.sin(side2Radians));
+    side2.setMagnitude(boidSideLength);
+    side2 = boid.position.copy().add(side2);
+    points.push([side2.x, side2.y]);
+
+    // Add boid head position as final coordinate for drawing loop.
+    points.push([boid.position.x, boid.position.y]);
+
+    return points
+}
+
 function drawBoid(boid) {
+    coordsArr = getBoidDrawingCoords(boid);
     ctx.moveTo(boid.position.x, boid.position.y);
-    ctx.arc(boid.position.x, boid.position.y, boidSize, 0, Math.PI * 2, false);
-    // ctx.fillText(`${boid.id}`, boid.position.x, boid.position.y);
+    // for circle boids
+    // ctx.arc(boid.position.x, boid.position.y, boidRadius, 0, Math.PI * 2, false);    
+    ctx.beginPath();
+    for (coords of coordsArr) ctx.lineTo(coords[0], coords[1]);
     ctx.fill();
-    ctx.stroke();  // What does this do? Doesn't appear necessary...
 }
 
 function updateSliders() {
@@ -305,7 +342,6 @@ function updateSliders() {
     separateMagnitude = separateForceSlider.value * forceMultiplier;
     cohereMagnitude = cohereForceSlider.value * forceMultiplier;
 }
-    
 
 function runSim() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -315,8 +351,20 @@ function runSim() {
     flock.forEach((boid) => {
 	drawBoid(boid);	
 	boid.updatePosition();
-    });    
+    });
     requestAnimationFrame(runSim);
+}
+
+// For testing.
+function step() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    updateSliders();
+    calcDistancesFlockmates();
+    flock.forEach((boid) => {
+	drawBoid(boid);	
+	boid.updatePosition();
+    });
 }
 
 //////////////////////////////////////////////////
@@ -328,7 +376,7 @@ for (let i=0; i < numBoids; i++) {
     flock.push(new Boid());
 }
 
-flock.forEach(boid => drawBoid(boid));
+// flock.forEach(boid => drawBoid(boid));
 
  // Create 2d array to hold boid distances i.e. [0][2] holds dist from boid 0 to boid 2
 let boidDistances = Array.from(Array(flock.length), () => new Array(flock.length))
