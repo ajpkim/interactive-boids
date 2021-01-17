@@ -12,30 +12,49 @@ const separateForceSlider = document.getElementById('separateForceSlider')
 const cohereRangeSlider = document.getElementById('cohereRangeSlider')
 const cohereForceSlider = document.getElementById('cohereForceSlider')
 
-const predatorRangeSlider = document.getElementById('predatorRangeSlider')
-const predatorForceSlider = document.getElementById('predatorForceSlider')
+const predatorAvoidanceRangeSlider = document.getElementById('predatorAvoidanceRangeSlider')
+const predatorAvoidanceForceSlider = document.getElementById('predatorAvoidanceForceSlider')
+
+const predatorPerceptionRangeSlider = document.getElementById('predatorPerceptionRangeSlider')
+const predatorCountSlider = document.getElementById('predatorCountSlider')
 //////////////////////////////////////////////////
 // Slider variables:
 let alignRange;
 let separateRange;
 let cohereRange;
+let predatorAvoidanceRange;
 
 let alignMagnitude;
 let separateMagnitude;
 let cohereMagnitude;
+let predatorAvoidanceMagnitude;
 //////////////////////////////////////////////////
 // Simulation variables
-
-const rangeMultiplier = 10;
-const forceMultiplier = 0.04;
-let minSpeed = 2;
-let maxSpeed = 3;
-let edgeBuffer = 20;
+// Boids
+let boidMinSpeed = 2;
+let boidMaxSpeed = 3;
 let boidRadius = 10;
 let boidTailLength = 5;
 let boidSideLength = 9;
 let boidSideRadians = 2.5;
+let boidColor = 'blue';
 
+// Predators
+let predatorMinSpeed = 1;
+let predatorChaseSpeed = boidMaxSpeed * 0.9;
+// let predatorRadius = 10;
+let predatorTailLength = boidTailLength * 2.5;
+let predatorSideLength = boidSideLength * 2;
+//let predatorMaxAngleDelta = 5;
+let predatorSideRadians = 2.75;
+let predatorPerceptionRange = 75;
+// let predatorSize = 15;
+let predatorColor = 'red';
+
+// General
+const rangeMultiplier = 10;
+const forceMultiplier = 0.04;
+let edgeBuffer = 20;
 let numBoids = 125;
 let boidIdCount = 0;
 //////////////////////////////////////////////////
@@ -90,10 +109,10 @@ class Vector2d {
 	}
     }
 
-    // Force the magnitude to be smaller than global maxSpeed (keep direction).
+    // Force the magnitude to be smaller than global boidMaxSpeed (keep direction).
     limitMagnitude() {
-	if (this.magnitude() > maxSpeed) {
-	    this.setMagnitude(maxSpeed);
+	if (this.magnitude() > boidMaxSpeed) {
+	    this.setMagnitude(boidMaxSpeed);
 	}
 	return this;
     }
@@ -148,7 +167,9 @@ class Vector2d {
     
     // Scalar division.
     div(other) {
-	if (typeof other === "number") {
+	if (other === 0) {
+	    throw new Error(`Zero Division Error`);
+	} else if (typeof other === "number") {
 	    this.x /= other;
 	    this.y /= other;
 	    return this;
@@ -168,7 +189,7 @@ class Vector2d {
     // Calculate and return the angle between this vector and arg vector.
     angleBetween(other) {
 	if (other instanceof Vector2d) {
-	    cosineTheta = this.dot(other) / (this.magnitude() + other.magnitude());
+	    let cosineTheta = this.dot(other) / (this.magnitude() + other.magnitude());
 	    return Math.acos(cosineTheta);
 	} else {
 	    throw new TypeError(`Cannot compute angle between ${this} and arg: ${other}`);
@@ -184,8 +205,8 @@ class Boid {
     constructor() {
 	this.id = boidIdCount++;
 	this.position = new Vector2d(randomNumber(0, MAX_X), randomNumber(0, MAX_Y));
-	this.velocity = new Vector2d(randomNumber(-maxSpeed, maxSpeed), randomNumber(-maxSpeed, maxSpeed))
-	this.velocity.setMagnitude(randomNumber(minSpeed, maxSpeed));
+	this.velocity = new Vector2d(randomNumber(-boidMaxSpeed, boidMaxSpeed), randomNumber(-boidMaxSpeed, boidMaxSpeed))
+	this.velocity.setMagnitude(randomNumber(boidMinSpeed, boidMaxSpeed));
 	this.acceleration = new Vector2d(0, 0);
 	this.alignMates = [];
 	this.separateMates = [];
@@ -240,11 +261,31 @@ class Boid {
 	this.acceleration.add(cohereForce);
     }
 
+    avoidPredators() {
+	let predatorAvoidanceForce = new Vector2d(0,0);
+	for (let predator of predators) {
+	    let distance = this.position.euclideanDistance(predator.position);
+	    if (distance <= predatorAvoidanceRange) {
+		let diffVector = this.position.copy().subtract(predator.position);
+		diffVector.div(distance ** 2);
+		predatorAvoidanceForce.add(diffVector);
+	    }
+	}
+
+	/// SOMETHING IS WRONG HERE!!!
+	if (predatorAvoidanceForce.magnitude() > 0) {
+	    predatorAvoidanceForce.setMagnitude(predatorAvoidanceMagnitude);
+	}
+	
+	this.acceleration.add(predatorAvoidanceForce);
+    }
+
     // Calculate the align, separate, and cohere forces and apply them to acceleration.
     applySteeringForces() {
 	this.align();
 	this.cohere();
 	this.separate();
+	this.avoidPredators();
     }
     
     // Move boid position according to velocity after updating velocity
@@ -252,12 +293,73 @@ class Boid {
     updatePosition() {
 	this.applySteeringForces()
 	this.velocity.add(this.acceleration);
-	// Ensure minSpeed <= boid speed i.e. boid.velocity.magnitude() <= maxSpeed
-	this.velocity.setMagnitude(Math.max(this.velocity.magnitude(), minSpeed));
-	this.velocity.limitMagnitude(maxSpeed);
+	// Ensure boidMinSpeed <= boid speed i.e. boid.velocity.magnitude() <= boidMaxSpeed
+	this.velocity.setMagnitude(Math.max(this.velocity.magnitude(), boidMinSpeed));
+	this.velocity.limitMagnitude(boidMaxSpeed);
 	this.position.add(this.velocity);
 	wrapEdges(this);
 	this.acceleration.mult(0);
+    }
+}
+
+class Predator {
+    constructor () {
+	this.position = new Vector2d(randomNumber(0, MAX_X), randomNumber(0, MAX_Y));
+	this.velocity = new Vector2d(randomNumber(-predatorChaseSpeed, predatorChaseSpeed), randomNumber(-predatorChaseSpeed, predatorChaseSpeed))
+	this.velocity.setMagnitude(randomNumber(predatorMinSpeed, predatorChaseSpeed));
+	this.prey = null;
+	this.acceleration = new Vector2d(0, 0);
+    }
+
+    // Loop through flock until find a boid within perception range, lock that boid as "prey"
+    findPrey() {
+	let prey;
+	for (let boid of flock) {
+	    if (this.position.euclideanDistance(boid.position) <= predatorPerceptionRange) {
+		this.prey = boid;
+		return
+	    }
+	}
+	this.prey = null;  
+    }
+    
+    chasePrey() {
+	if ((this.prey === null) || (this.position.euclideanDistance(this.prey.position) > predatorPerceptionRange)) {
+	    this.findPrey();
+	}
+	if (this.prey === null) {
+	    // Apply 10% braking force acceleration
+	    let brakingForce = this.velocity.copy().mult(-1);
+	    brakingForce.setMagnitude(this.velocity.magnitude() * 0.1);
+	    this.acceleration.add(brakingForce);
+	    return
+	}
+		
+	// let chaseForce = this.position.copy().subtract(this.prey.position);
+	let chaseForce = this.prey.position.copy().subtract(this.position);
+	chaseForce.subtract(this.velocity);
+	chaseForce.setMagnitude(predatorChaseSpeed);
+	
+	// // Set a max delta
+	// if (chaseForce.angleBetween(this.velocity) > predatorMaxAngleDelta) {
+	//     console.log('WOAH');
+	// }
+
+	
+	
+	
+	this.acceleration.add(chaseForce);
+    }
+
+    updatePosition() {
+	this.chasePrey();
+	this.velocity.add(this.acceleration);
+	this.velocity.setMagnitude(Math.max(predatorMinSpeed, this.velocity.magnitude()));
+	this.velocity.limitMagnitude(predatorChaseSpeed);
+	this.position.add(this.velocity);
+	this.acceleration.mult(0);
+	wrapEdges(this);
+	
     }
 }
 
@@ -330,28 +432,96 @@ function drawBoid(boid) {
     // ctx.arc(boid.position.x, boid.position.y, boidRadius, 0, Math.PI * 2, false);    
     ctx.beginPath();
     for (coords of coordsArr) ctx.lineTo(coords[0], coords[1]);
+    ctx.fillStyle = boidColor;
     ctx.fill();
 }
 
+
+function getPredatorDrawingCoords(predator) {
+    points = [];
+    let directionVector = predator.velocity.copy().normalize();    
+    let directionRadians = Math.atan2(directionVector.y, directionVector.x);
+
+    let side1Radians = directionRadians + predatorSideRadians;
+    let side1 = new Vector2d(Math.cos(side1Radians), Math.sin(side1Radians));
+    side1.setMagnitude(predatorSideLength);
+    side1 = predator.position.copy().add(side1);
+    points.push([side1.x, side1.y]);
+
+    let tailVector = directionVector.mult(-1).setMagnitude(predatorTailLength);
+    let tailPoint = predator.position.copy().add(tailVector);
+    points.push([tailPoint.x, tailPoint.y]);
+
+    let side2Radians = directionRadians - predatorSideRadians;
+    let side2 = new Vector2d(Math.cos(side2Radians), Math.sin(side2Radians));
+    side2.setMagnitude(predatorSideLength);
+    side2 = predator.position.copy().add(side2);
+    points.push([side2.x, side2.y]);
+
+    // Add predator head position as final coordinate for drawing loop.
+    points.push([predator.position.x, predator.position.y]);
+
+    return points
+}
+
+function drawPredator(predator) {
+    coordsArr = getPredatorDrawingCoords(predator);
+    ctx.moveTo(predator.position.x, predator.position.y);
+    // for circle predators
+    // ctx.arc(predator.position.x, predator.position.y, predatorRadius, 0, Math.PI * 2, false);    
+    ctx.beginPath();
+    for (coords of coordsArr) ctx.lineTo(coords[0], coords[1]);
+    ctx.fillStyle = predatorColor;
+    ctx.fill();
+}
+
+//////////////////////////////////////////////////
+
 function updateSliders() {
+    // Primary flocking interactions
     alignRange = alignRangeSlider.value * rangeMultiplier;
     separateRange = separateRangeSlider.value * rangeMultiplier;
     cohereRange = cohereRangeSlider.value * rangeMultiplier;
-
+    
     alignMagnitude = alignForceSlider.value * forceMultiplier;
     separateMagnitude = separateForceSlider.value * forceMultiplier;
     cohereMagnitude = cohereForceSlider.value * forceMultiplier;
+
+    // Predator interactions
+    predatorAvoidanceRange = predatorAvoidanceRangeSlider.value * rangeMultiplier;
+    predatorAvoidanceMagnitude = predatorAvoidanceForceSlider.value * (forceMultiplier * 2) // Arb *2
+
+    predatorPerceptionRange = predatorPerceptionRangeSlider.value * (rangeMultiplier * 0.6); // Arbitrary predator range discount
+    numPredators = predatorCountSlider.value;
 }
 
+function updatePredators() {
+    while (predators.length < numPredators) {
+	predators.push(new Predator());
+    }
+    while (predators.length > numPredators) {
+	predators.pop();
+    }
+    predators.forEach(predator => {
+	predator.updatePosition();
+	drawPredator(predator);
+    });
+}
+
+
+
+
 function runSim() {
+    updateSliders();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
-    updateSliders();
     calcDistancesFlockmates();
     flock.forEach((boid) => {
 	drawBoid(boid);	
 	boid.updatePosition();
     });
+
+    updatePredators();
     requestAnimationFrame(runSim);
 }
 
@@ -376,9 +546,14 @@ for (let i=0; i < numBoids; i++) {
     flock.push(new Boid());
 }
 
-// flock.forEach(boid => drawBoid(boid));
+flock.forEach(boid => drawBoid(boid));
+
+let predators = [];
 
  // Create 2d array to hold boid distances i.e. [0][2] holds dist from boid 0 to boid 2
 let boidDistances = Array.from(Array(flock.length), () => new Array(flock.length))
+
+// pred = new Predator();
+// drawPredator(pred);
 
 runSim(flock);
