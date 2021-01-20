@@ -104,10 +104,9 @@ class Vector2d {
 	}
     }
 
-    // Force the magnitude to be smaller than global boidMaxSpeed (keep direction).
-    limitMagnitude() {
-	if (this.magnitude() > boidMaxSpeed) {
-	    this.setMagnitude(boidMaxSpeed);
+    limitMagnitude(limit) {
+	if (this.magnitude() > limit) {
+	    this.setMagnitude(limit);
 	}
 	return this;
     }
