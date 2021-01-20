@@ -46,11 +46,12 @@ let predatorCatchRadius = 8;
 let predatorExplodeThreshold = 10;
 let predatorExplodeCountdown = 120;
 let predatorInitColor = 'red';
+
 // General
 const rangeMultiplier = 10;
 const forceMultiplier = 0.04;
 let edgeBuffer = 20;
-let numBoids = 250;
+let numBoids = 275;
 let boidIdCount = 0;
 //////////////////////////////////////////////////
 function initSimulation () {
@@ -204,7 +205,7 @@ class Boid {
 	this.velocity = new Vector2d(randomNumber(-boidMaxSpeed, boidMaxSpeed), randomNumber(-boidMaxSpeed, boidMaxSpeed))
 	this.velocity.setMagnitude(randomNumber(boidMinSpeed, boidMaxSpeed));
 	this.acceleration = new Vector2d(0, 0);
-		// Measurements
+	// Measurements
 	this.sideRadians = boidInitSideRadians;
 	this.sideLength = boidInitSideLength;
 	this.tailLength = boidInitTailLength;
@@ -333,7 +334,7 @@ class Predator {
 	this.sideRadians = predatorInitSideRadians
 	this.sideLength = predatorInitSideLength;
 	this.tailLength = predatorInitTailLength;
-	this.color = "red";
+	this.color = predatorInitColor;
 	// Status
 	this.prey = null;
 	this.preyEatCount = 0;

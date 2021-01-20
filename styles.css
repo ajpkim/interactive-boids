@@ -2,46 +2,87 @@
 
 
 body {
+    max-width: 55rem;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;    
     background-color: #232933;
 }
 
-h1 {
-    color: #00ff90;
-}
-
-h2 {
-    color: white;
-}
-
-p {
-    color: white;
-}
 
 #canvas {
+    border: 5px solid #ffffff;
+    background-color: #b6bef5;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 
-    /* height: 8000; */
-    /* width: 700;   */
-    border: 5px solid red;
-    background-color: #fff;
 }
 
-/* Adding sliders */
+.boidsContainer{
+    max-width: 50em;
+    margin-left: auto;
+    margin-right: auto;
+}
 
-/* .rangeSliderContainer { /*
-/*     width: 75%; */
-/*     margin-top: 25px; */
-/*     background: orange; */
-/*     color: white; */
-		
-/* } */
+.boidsContainer h1 {
+    color: white;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 
-/* .forceSliderContainer { */
-/*     width: 75%; */
-/*     margin-top: 25px; */
-/*     color: white; */
-/*     background: purple; */
-/* } */
+}
+
+.boidsContainer h2 {
+    color: #b6bef5;
+    color: #4cf3ad;
+    text-align: center;
+    margin-bottom: 10;
+
+}
+
+.boidsContainer h3 {
+    color: #4cf3ad;
+    color: #b6bef5;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+
+.boidsContainer p {
+    margin: 0;
+    color: #fff;
+}
+
 
 .sliderContainer {
-    background: #009999
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+/* .rangeAnnotationColumn { */
+/*     float: left; */
+/*     text-color: orange; */
+    
+/* } */
+
+.rangeAnnotationColumn p {
+    float: left;
+    
+    color: #fff;
+}
+
+.controlsColumn {
+    /* max-width: 45%; */
+}
+
+.forceAnnotationColumn p {
+    float: right;
+    color: #fff;
 }
