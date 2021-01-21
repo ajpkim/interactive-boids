@@ -1,3 +1,10 @@
+<!--
+Interactive Boids Simulation
+Author: Alex Kim (ajpkim)
+Date: 2020-01-20
+Repo: https://github.com/ajpkim/interactive-boids
+ -->
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -8,66 +15,62 @@
   </head>
   <body>
     <main>
+      <h1>Boids: Emergent flocking behavior</h1>
 
-      <div class="boidsContainer">
-	<h1>Boids: Emergent flocking behavior</h1>
-	<canvas id="canvas" width="700" height="500"></canvas>
+      <div id="canvasDiv">
+	<canvas id="canvas" width=800 height=600 ></canvas>
+	</div>
 
-	<div class="simulationControlsContainer">
+	<div class="boidsControlsGrid">
 
-	  <div class="rangeAnnotationColumn">
-	    <p>Range Controls</p>
-	    <p>Controls</p>
+	  <div class="rangeAnnotationCol">
+	    <div class="sliderAnnotation">
+	      <h2>Range Sliders</h2>
+	    </div>
+
 	  </div>
-	  
-	  <div class="controlsColumn">
+
+	  <div class="slidersCol">
+	    
 	    <h2>Classic Steering Forces</h2>
 
-	    <div class="sliderContainer">
 	      <h3>Align</h3>
-	      <p>(velocity matching)</p>
+	    <p>(velocity matching)</p>
 	      <input type="range" min="1" max="20" value="10" id="alignRangeSlider" class="rangeSlider">
 	      <input type="range" min="1" max="20" value="5" id="alignForceSlider" class="forceSlider">
-	    </div>
 	    
-	    <div class="sliderContainer">
 	      <h3>Separate</h3>
 	      <p>(collision avoidance)</p>
 	      <input type="range" min="1" max="20" value="10" id="separateRangeSlider" class="rangeSlider">
 	      <input type="range" min="1" max="20" value="5" id="separateForceSlider" class="forceSlider">
-	    </div>
-	    
-	    <div class="sliderContainer">
+
 	      <h3>Cohere</h3>
 	      <p>(flock centering)</p>
 	      <input type="range" min="1" max="20" value="10" id="cohereRangeSlider" class="rangeSlider">
 	      <input type="range" min="1" max="20" value="5" id="cohereForceSlider" class="forceSlider">
-	    </div>
 
-	    <h2>Predator Interactions</h2>
-	    
-	    <div class="sliderContainer">
-	      <h3>Predator Avoidance</h3>
-	      <input type="range" min="1" max="20" value="5" id="predatorAvoidanceRangeSlider" class="rangeSlider">
+	      
+	      <h2>Predator Interactions</h2>
+
+	      <h3>Boid predator avoidance</h3>
+	      <input type="range" min="1" max="20" value="10" id="predatorAvoidanceRangeSlider" class="rangeSlider">
 	      <input type="range" min="1" max="20" value="8" id="predatorAvoidanceForceSlider" class="forceSlider">	       
-	    </div>
 
-	    <div class="sliderContainer">
-	      <h3>Predator Controls</h3>
-	      <input type="range" min="1" max="20" value="7.5" id="predatorPerceptionRangeSlider" class="rangeSlider">
+	      <h3>Predator range & population</h3>
+	      <input type="range" min="1" max="20" value="8" id="predatorPerceptionRangeSlider" class="rangeSlider">
 	      <input type="range" min="0" max="8" value="1" id="predatorCountSlider" class="predatorCountSlider">
+
+	  </div>
+	  
+	  <div class="forceAnnotationCol">
+	    <div class="sliderAnnotation">
+	      <h2>Force Sliders</h2>
 	    </div>
-
-	  </div>
-
-	  <div class="forceAnnotationColumn">
-	    <p>Force Controls</p>
-	  </div>
 	    
 	  </div>
+	  
 	</div>
-      </div>
-      
+      <br><br><br>
     </main>
     <script src="./assets/js/boids.js"></script>
   </body>
