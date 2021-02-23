@@ -1,17 +1,15 @@
 /*
 Interactive Boids Simulation
 Author: Alex Kim (ajpkim)
-Date: 2020-01-20
+Date: 2021-01-20
 Repo: https://github.com/ajpkim/interactive-boids
 */
-
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// For more dynamic sizing with other document styling
-// canvas.width = canvas.clientWidth;
-// canvas.height = canvas.width * 0.7
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.width * 0.7;
 
 const MAX_X = canvas.width;
 const MAX_Y = canvas.height;
@@ -284,7 +282,7 @@ class Boid {
 	this.acceleration.add(predatorAvoidanceForce);
     }
 
-    // Calculate steering forces and apply them to acceleration.
+    // Calculate the align, separate, and cohere forces and apply them to acceleration.
     applySteeringForces() {
 	this.align();
 	this.cohere();
@@ -392,7 +390,6 @@ class Predator {
 	}
     }
 
-    // Predator grows and changes color while exploding.
     explodeStep() {
 	this.tailLength *= 1.005;
 	this.sideLength *= 1.005;
@@ -407,8 +404,7 @@ class Predator {
 	    this.explode()
 	}
     }
-    
-    // Calculate and apply a steering force to predator acceleration based on prey position or lack of prey (braking force).
+
     chasePrey() {
 	if ((this.prey === null) || (this.position.euclideanDistance(this.prey.position) > predatorPerceptionRange)) {
 	    this.findPrey();
@@ -537,9 +533,8 @@ function updateSliders() {
     cohereMagnitude = cohereForceSlider.value * forceMultiplier;
 
     // Predator interactions (discounts on multipliers are arbitrary).
-    predatorAvoidanceRange = predatorAvoidanceRangeSlider.value * (rangeMultiplier * 0.6)
+    predatorAvoidanceRange = predatorAvoidanceRangeSlider.value * (rangeMultiplier * 0.6);
     predatorAvoidanceMagnitude = predatorAvoidanceForceSlider.value * (forceMultiplier * 2);
-
     predatorPerceptionRange = predatorPerceptionRangeSlider.value * (rangeMultiplier * 0.6);
     predatorPopulation = predatorCountSlider.value;
 }
@@ -570,7 +565,6 @@ function step() {
 }
 //////////////////////////////////////////////////
 // Initialize and run simulation.
-
 const flock = []
 const predators = [];
 for (let i=0; i < numBoids; i++) {
