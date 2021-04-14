@@ -1,0 +1,18 @@
+* Boids
+
+The boids algorithm is an artificial life simulation discovered by Craig Reynolds that models the coordinated movements of animal groups like flocks of birds and schools of fish.
+
+The movement of each individual "boid" is governed by a few simple rules. From these simple local rules emerges complex and organized behavior at the group level, making the boids algorithm a beautiful example of emergent complexity.
+
+In this implementation on [[https://ajpkim.com/projects/boids/][my site]] you can play around with the range and magnitude of the steering forces and observe the impact on group behavior and boid survival.
+
+** Steering Forces
+
+There are 3 classic steering forces, to which I added a predator force as well. Here is a description of the classic forces from Craig Reynold's own [[http://www.red3d.com/cwr/boids/][site]]:
+
+#+html: <p align="center"><img src="img/steering-forces.png" /></p>
+
+** Videos
+
+- [[https://www.youtube.com/watch?v=15B8qN9dre4][Amazing Fish Form Giant Ball to Scare Predators]]
+- [[https://www.youtube.com/watch?v=V4f_1_r80RY][Bird Flock Murmations]]
